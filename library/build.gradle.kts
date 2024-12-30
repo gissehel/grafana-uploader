@@ -7,7 +7,7 @@ plugins {
 }
 
 group = "io.github.gissehel.grafana.grafana-uploader"
-version = "0.0.1-SNAPSHOT"
+version = "0.0.1"
 
 repositories {
     mavenCentral()
