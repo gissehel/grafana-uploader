@@ -46,5 +46,5 @@ jobs:
           ./gradlew setNextPrereleaseVersion
           version=$(./gradlew getVersion | grep "Version: " | sed -e 's/^Version: //')
           git add "library/version.properties"
-          git commit -m "Set next snapshot version ${{ version }}"
+          git commit -m "Set next snapshot version ${version}"
           git push
