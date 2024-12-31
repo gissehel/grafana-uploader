@@ -7,7 +7,10 @@ plugins {
     id("com.vanniktech.maven.publish") version "0.30.0"
 }
 
+val currentVersion = readVersion()
+
 group = "io.github.gissehel.grafana"
+version = currentVersion
 
 repositories {
     mavenCentral()
@@ -65,14 +68,12 @@ mavenPublishing {
 }
 
 
-// Fonction pour lire la version actuelle depuis un fichier version.properties
 fun readVersion(): String {
     val properties = Properties()
     file("version.properties").inputStream().use { properties.load(it) }
     return properties.getProperty("version")
 }
 
-// Fonction pour écrire une nouvelle version dans le fichier version.properties
 fun writeVersion(version: String) {
     val properties = Properties()
     file("version.properties").apply {
@@ -81,10 +82,6 @@ fun writeVersion(version: String) {
     properties["version"] = version
     file("version.properties").outputStream().use { properties.store(it, null) }
 }
-
-// Définir la version actuelle
-val currentVersion = readVersion()
-version = currentVersion
 
 tasks.register("setVersion") {
     group = "versioning"
