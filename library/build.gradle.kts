@@ -1,4 +1,5 @@
 import com.vanniktech.maven.publish.SonatypeHost
+import java.util.Properties
 
 plugins {
     kotlin("jvm") version "2.1.0"
@@ -7,7 +8,6 @@ plugins {
 }
 
 group = "io.github.gissehel.grafana"
-version = "0.0.5-SNAPSHOT"
 
 repositories {
     mavenCentral()
@@ -61,5 +61,49 @@ mavenPublishing {
             connection.set("scm:git:git://github.com/gissehel/grafana-uploader.git")
             developerConnection.set("scm:git:ssh://git@github.com/gissehel/grafana-uploader.git")
         }
+    }
+}
+
+
+// Fonction pour lire la version actuelle depuis un fichier version.properties
+fun readVersion(): String {
+    val properties = Properties()
+    file("version.properties").inputStream().use { properties.load(it) }
+    return properties.getProperty("version")
+}
+
+// Fonction pour écrire une nouvelle version dans le fichier version.properties
+fun writeVersion(version: String) {
+    val properties = Properties()
+    file("version.properties").apply {
+        if (exists()) inputStream().use { properties.load(it) }
+    }
+    properties["version"] = version
+    file("version.properties").outputStream().use { properties.store(it, null) }
+}
+
+// Définir la version actuelle
+val currentVersion = readVersion()
+version = currentVersion
+
+tasks.register("setReleaseVersion") {
+    group = "versioning"
+    description = "Set the version to a release version"
+    doLast {
+        val releaseVersion = project.findProperty("releaseVersion") as String?
+            ?: throw IllegalArgumentException("You must provide a releaseVersion")
+        writeVersion(releaseVersion)
+        println("Version updated to $releaseVersion")
+    }
+}
+
+tasks.register("setNextSnapshotVersion") {
+    group = "versioning"
+    description = "Set the version to the next snapshot version"
+    doLast {
+        val nextSnapshotVersion = project.findProperty("nextSnapshotVersion") as String?
+            ?: throw IllegalArgumentException("You must provide a nextSnapshotVersion")
+        writeVersion(nextSnapshotVersion)
+        println("Version updated to $nextSnapshotVersion")
     }
 }
