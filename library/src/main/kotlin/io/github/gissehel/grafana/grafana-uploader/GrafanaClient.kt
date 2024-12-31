@@ -26,17 +26,17 @@ class GrafanaClient(
         val uid = vuid.getUidFromVuid()
         try {
             httpClient.getJson(getFolderUrl(uid), token) { jsonElement ->
-                println("Json: $jsonElement")
+                debugLog("Json: $jsonElement")
                 exists = true
             }
         } catch (e: CommunicationError) {
-            println("Communication error: ${e.asCode}")
+            debugLog("Communication error: [${e.asCode}]")
         }
         if (!exists) {
             val folder = Folder(uid = uid, title = title, parentUid = parentUid)
             httpClient.postJson(getFoldersUrl, token, folder) { jsonElement ->
-                println("Created folder $uid ($vuid)")
-                println("Json: $jsonElement")
+                debugLog("Created folder [${uid}] ($vuid)")
+                debugLog("Json: ${jsonElement}")
             }
         }
     }
