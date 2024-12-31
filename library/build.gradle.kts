@@ -86,24 +86,12 @@ fun writeVersion(version: String) {
 val currentVersion = readVersion()
 version = currentVersion
 
-tasks.register("setReleaseVersion") {
+tasks.register("setVersion") {
     group = "versioning"
-    description = "Set the version to a release version"
+    description = "Set the version"
+    val newVersion = project.findProperty("newVersion") as String? ?: throw IllegalArgumentException("You must provide a newVersion")
+    writeVersion(newVersion)
     doLast {
-        val releaseVersion = project.findProperty("releaseVersion") as String?
-            ?: throw IllegalArgumentException("You must provide a releaseVersion")
-        writeVersion(releaseVersion)
-        println("Version updated to $releaseVersion")
-    }
-}
-
-tasks.register("setNextSnapshotVersion") {
-    group = "versioning"
-    description = "Set the version to the next snapshot version"
-    doLast {
-        val nextSnapshotVersion = project.findProperty("nextSnapshotVersion") as String?
-            ?: throw IllegalArgumentException("You must provide a nextSnapshotVersion")
-        writeVersion(nextSnapshotVersion)
-        println("Version updated to $nextSnapshotVersion")
+        println("Version updated to ${newVersion}")
     }
 }
