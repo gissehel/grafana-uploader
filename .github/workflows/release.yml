@@ -2,17 +2,9 @@ name: Release Kotlin Project
 
 on:
   workflow_dispatch:
-    inputs:
-      release_version:
-        description: 'The release version to create (e.g., 1.0.0)'
-        required: true
-      next_snapshot_version:
-        description: 'The next snapshot version (e.g., 1.0.1-SNAPSHOT)'
-        required: true
 
 jobs:
   release:
-    name: "Release Kotlin Project ${{ github.event.inputs.release_version }}"
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -34,21 +26,25 @@ jobs:
           git config user.name "github-actions"
           git config user.email "actions@github.com"
 
-      - name: "Set release version ${{ github.event.inputs.release_version }}"
+      - name: "Set release version"
         run: |
-          ./gradlew setVersion -PnewVersion="${{ github.event.inputs.release_version }}"
-          git add "library/version.properties"
-          git commit -m "Release version ${{ github.event.inputs.release_version }}"
+          ./gradlew releaseVersion
+          version=$(./gradlew getVersion | grep "Version: " | sed -e 's/^Version: //')
+          echo "RELEASE_VERSION=${version}" >> "${GITHUB_ENV}"
 
-      - name: "Create Git tag v${{ github.event.inputs.release_version }}"
+          git add "library/version.properties"
+          git commit -m "Release version ${version}"
+
+      - name: "Create Git tag v${{ env.RELEASE_VERSION }}"
         run: |
-          release_version="${{ github.event.inputs.release_version }}"
+          release_version="${{ env.RELEASE_VERSION }}"
           git tag -a "v${release_version}" -m "Release ${release_version}"
           git push origin "v${release_version}"
 
-      - name: "Set next snapshot version ${{ github.event.inputs.next_snapshot_version }}"
+      - name: "Set next snapshot version"
         run: |
-          ./gradlew setVersion -PnewVersion=${{ github.event.inputs.next_snapshot_version }}
+          ./gradlew setNextPrereleaseVersion
+          version=$(./gradlew getVersion | grep "Version: " | sed -e 's/^Version: //')
           git add "library/version.properties"
-          git commit -m "Set next snapshot version ${{ github.event.inputs.next_snapshot_version }}"
+          git commit -m "Set next snapshot version ${{ version }}"
           git push
