@@ -6,7 +6,7 @@ plugins {
     id("com.vanniktech.maven.publish") version "0.30.0"
 }
 
-group = "io.github.gissehel.grafana.grafana-uploader"
+group = "io.github.gissehel.grafana"
 version = "0.0.2-SNAPSHOT"
 
 repositories {
@@ -34,7 +34,7 @@ mavenPublishing {
 
     signAllPublications()
 
-    coordinates(group.toString(), "library", version.toString())
+    coordinates(group.toString(), "grafana-uploader", version.toString())
 
     pom {
         name.set("grafana-uploader")
@@ -53,6 +53,7 @@ mavenPublishing {
                 id.set("gissehel")
                 name.set("Gissehel")
                 url.set("https://github.com/gissehel/")
+                email.set("gissehel@users.noreply.github.com")
             }
         }
         scm {
