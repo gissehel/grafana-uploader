@@ -30,7 +30,7 @@ kotlin{
 }
 
 mavenPublishing {
-    publishToMavenCentral(SonatypeHost.CENTRAL_PORTAL)
+    publishToMavenCentral(SonatypeHost.CENTRAL_PORTAL, automaticRelease = true)
 
     signAllPublications()
 
