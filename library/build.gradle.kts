@@ -91,25 +91,18 @@ fun deleteProperties(filename: String) {
     file(filename).delete()
 }
 
-fun String.getIntOrDefault(default: Int): Int {
+fun <T> getResultOrDefault(data: String, default: T, block: (String)->T): T {
     return try {
-        this.toInt()
+        block(data)
     } catch (e: NumberFormatException) {
         default
     }
 }
-
-fun String.getBooleanOrDefault(default: Boolean): Boolean {
-    return try {
-        this.toBoolean()
-    } catch (e: NumberFormatException) {
-        default
-    }
-}
+fun String.getIntOrDefault(default: Int): Int = getResultOrDefault(this, default) { this.toInt() }
+fun String.getBooleanOrDefault(default: Boolean): Boolean = getResultOrDefault(this, default) { this.toBoolean() }
 
 fun Properties.getInt(key: String, default: Int): Int = (this[key] as String?)?.getIntOrDefault(default) ?: default
 fun Properties.getBoolean(key: String, default: Boolean): Boolean = (this[key] as String?)?.getBooleanOrDefault(default) ?: default
-
 
 fun Version.asVersionString(): String {
     val contextSuffix = if (this.context != null) "-${this.context}" else ""
@@ -117,25 +110,10 @@ fun Version.asVersionString(): String {
     return "${this.major}.${this.minor}.${this.patch}${contextSuffix}${snapshotSuffix}"
 }
 
-fun Version.getReleaseVersion(): Version {
-    return Version(
-        major = this.major,
-        minor = this.minor,
-        patch = this.patch,
-        preRelease = false,
-        context = this.context,
-    )
-}
-
-fun Version.getNextPatchVersion(): Version {
-    return Version(
-        major = this.major,
-        minor = this.minor,
-        patch = this.patch+1,
-        preRelease = true,
-        context = this.context,
-    )
-}
+fun Version.getReleaseVersion(): Version = Version(this.major, this.minor, this.patch,false,this.context)
+fun Version.getNextPatchVersion(): Version = Version(this.major, this.minor, this.patch+1, true, this.context)
+fun Version.getNextMinorVersion(): Version = Version(this.major, this.minor+1, 0, true, this.context)
+fun Version.getNextMajorVersion(): Version = Version(this.major+1, 0, 0, true, this.context)
 
 fun readVersion(): Version {
     val properties = readProperties("version.properties")
@@ -180,18 +158,12 @@ fun writeVersion(version: Version) {
     writeVersionContext(version.context)
 }
 
-tasks.register("setVersion") {
+tasks.register("getVersion") {
     group = "versioning"
-    description = "Set the version"
-    val major = project.findProperty("major") as String? ?: throw IllegalArgumentException("You must provide an integer major")
-    val minor = project.findProperty("minor") as String? ?: throw IllegalArgumentException("You must provide an integer minor")
-    val patch = project.findProperty("patch") as String? ?: throw IllegalArgumentException("You must provide an integer patch")
-    val isSnapshot = project.findProperty("isSnapshot") as String? ?: throw IllegalArgumentException("You must provide a boolean isSnapshot")
-    val newVersion = Version(major.getIntOrDefault(0), minor.getIntOrDefault(0), patch.getIntOrDefault(0), preRelease = isSnapshot.getBooleanOrDefault(true))
-    val newVersionString = newVersion.asVersionString()
-    writeVersion(newVersion)
+    description = "get current version"
+    val currentVersion = version
     doLast {
-        println("Version updated to ${newVersionString}")
+        println("Version: ${currentVersion}")
     }
 }
 
@@ -205,35 +177,46 @@ tasks.register("setVersionContext") {
     }
 }
 
-tasks.register("releaseVersion") {
-    group = "versioning"
-    description = "Switch from a snapshot version to a release version"
-    val oldVersion = readVersion()
-    val newVersion = oldVersion.getReleaseVersion()
-    val newVersionString = newVersion.asVersionString()
-    writeVersion(newVersion)
-    doLast {
-        println("Version updated to ${newVersionString}")
-    }
-}
+private data class TaskParams(
+    val name: String,
+    val description: String,
+    val block: Task.() -> Version
+)
 
-tasks.register("setNextPrereleaseVersion") {
-    group = "versioning"
-    description = "Switch from a release version to the next prerelease version"
-    val oldVersion = readVersion()
-    val newVersion = oldVersion.getNextPatchVersion()
-    val newVersionString = newVersion.asVersionString()
-    writeVersion(newVersion)
-    doLast {
-        println("Version updated to ${newVersionString}")
-    }
-}
-
-tasks.register("getVersion") {
-    group = "versioning"
-    description = "get current version"
-    val current_version = version
-    doLast {
-        println("Version: ${current_version}")
+listOf(
+    TaskParams("setVersion","Set the version") {
+        val major = project.findProperty("major") as String? ?: throw IllegalArgumentException("You must provide an integer major")
+        val minor = project.findProperty("minor") as String? ?: throw IllegalArgumentException("You must provide an integer minor")
+        val patch = project.findProperty("patch") as String? ?: throw IllegalArgumentException("You must provide an integer patch")
+        val isSnapshot = project.findProperty("isSnapshot") as String? ?: throw IllegalArgumentException("You must provide a boolean isSnapshot")
+        Version(
+            major.getIntOrDefault(0),
+            minor.getIntOrDefault(0),
+            patch.getIntOrDefault(0),
+            preRelease = isSnapshot.getBooleanOrDefault(true)
+        )
+    },
+    TaskParams("releaseVersion", "Switch from a snapshot version to a release version") {
+        readVersion().getReleaseVersion()
+    },
+    TaskParams("setNextPrereleaseVersion", "Switch from a release version to the next prerelease version") {
+        readVersion().getNextPatchVersion()
+    },
+    TaskParams("setNextMinorPrereleaseVersion", "Switch the next minor prerelease version") {
+        readVersion().getNextMinorVersion()
+    },
+    TaskParams("setNextMajorPrereleaseVersion", "Switch the next major prerelease version") {
+        readVersion().getNextMajorVersion()
+    },
+).forEach { taskParams ->
+    tasks.register(taskParams.name) {
+        group = "versioning"
+        description = taskParams.description
+        val newVersion = taskParams.block(this)
+        val newVersionString = newVersion.asVersionString()
+        writeVersion(newVersion)
+        doLast {
+            println("Version updated to ${newVersionString}")
+        }
     }
 }
