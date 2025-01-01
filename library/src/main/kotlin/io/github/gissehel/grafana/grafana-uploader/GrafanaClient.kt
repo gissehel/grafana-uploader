@@ -21,9 +21,10 @@ class GrafanaClient(
     private val getFoldersUrl: String get() = "${rootUrl}/api/folders"
     private fun getFolderUrl(uid: String): String = "${rootUrl}/api/folders/${uid}"
 
-    fun createFolderIfNotExists(vuid: String, title: String, parentUid: String) : Unit {
+    fun createFolderIfNotExists(vuid: String, title: String, parentVuid: String) : Unit {
         var exists: Boolean = false
         val uid = vuid.getUidFromVuid()
+        val parentUid = parentVuid.getUidFromVuid()
         try {
             httpClient.getJson(getFolderUrl(uid), token) { jsonElement ->
                 debugLog("Json: $jsonElement")
