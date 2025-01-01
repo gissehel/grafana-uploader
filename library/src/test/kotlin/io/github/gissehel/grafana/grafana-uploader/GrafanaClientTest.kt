@@ -1,19 +1,15 @@
 package io.github.gissehel.grafana.`grafana-uploader`
 
-import io.github.gissehel.grafana.`grafana-uploader`.tools.asArray
 import io.github.gissehel.grafana.`grafana-uploader`.tools.asObject
 import io.github.gissehel.grafana.`grafana-uploader`.tools.asString
 import io.github.gissehel.grafana.uploader.GrafanaClient
 import io.github.gissehel.grafana.uploader.error.CommunicationError
 import io.github.gissehel.grafana.uploader.tools.TestDispatcher
 import io.github.gissehel.grafana.uploader.tools.model.Dispatchlet
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.jsonArray
-import kotlinx.serialization.json.jsonObject
-import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.json.*
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
-import okhttp3.mockwebserver.RecordedRequest
 import org.junit.jupiter.api.BeforeEach
 import kotlin.test.Test
 import kotlin.test.assertFailsWith
@@ -30,11 +26,21 @@ class GrafanaClientTest {
         println(it)
     }
 
+    fun createGetDispatchlet(name: String, path: String, body: String) = Dispatchlet(name)
+        .testRequest { recordedRequest -> recordedRequest.path == path && recordedRequest.method == "GET" }
+        .responseGetter { MockResponse().setResponseCode(200).setBody(body) }
+
+    fun createPostDispatchlet(name: String, path: String, requestBody: String, body: String) = Dispatchlet(name)
+        .testRequest { recordedRequest -> recordedRequest.path == path && recordedRequest.method == "POST" &&  recordedRequest.body.buffer.peek().readUtf8() == requestBody }
+        .responseGetter { MockResponse().setResponseCode(200).setBody(body) }
+
+
     @BeforeEach
     fun beforeEach() {
         testDispatcher.clear()
     }
 
+    //region folders
     @Test
     fun `createFolderIfNotExists on a server that doesn't act like grafana should fail`() {
         val grafanaClient = createGrafanaClient()
@@ -93,8 +99,6 @@ class GrafanaClientTest {
         assert(mockServer.requestCount == 1) {
             "It should have created only 1 request"
         }
-        val request = mockServer.takeRequest()
-        val bodyContent = request.body.buffer.readUtf8()
 
         assert(testDispatcher.namesDispatched.size == 1) {
             "There should be only one successful call"
@@ -146,9 +150,6 @@ class GrafanaClientTest {
         assert(mockServer.requestCount == 1) {
             "It should have created only 1 request"
         }
-        val request = mockServer.takeRequest()
-        val bodyContent = request.body.buffer.readUtf8()
-
         assert(testDispatcher.namesDispatched.size == 1) {
             "There should be only one successful call"
         }
@@ -160,7 +161,7 @@ class GrafanaClientTest {
 
     @Test
     fun `createFolderIfNotExists should try to create a folder on a server that act like grafana even if the parent has a very long vuid`() {
-        val grafanaClient = createGrafanaClientAndDebug()
+        val grafanaClient = createGrafanaClient()
 
         testDispatcher.add(dispatchletFoldersWhenBarExists)
         testDispatcher.add(dispatchletFolderAddShon)
@@ -200,8 +201,6 @@ class GrafanaClientTest {
         assert(mockServer.requestCount == 1) {
             "It should have created only 1 request"
         }
-        val request = mockServer.takeRequest()
-        val bodyContent = request.body.buffer.readUtf8()
 
         assert(testDispatcher.namesDispatched.size == 1) {
             "There should be only one successful call"
@@ -222,14 +221,6 @@ class GrafanaClientTest {
     // private val staticFoldersWhenFooExists = """[${staticFoldersBase},${staticFolderFooCreated}]"""
     private val staticFoldersWhenBarExists = """[${staticFoldersBase},${staticFolderBarCreated}]"""
 
-    fun createGetDispatchlet(name: String, path: String, body: String) = Dispatchlet(name)
-        .testRequest { recordedRequest -> recordedRequest.path == path && recordedRequest.method == "GET" }
-        .responseGetter { MockResponse().setResponseCode(200).setBody(body) }
-
-    fun createPostDispatchlet(name: String, path: String, requestBody: String, body: String) = Dispatchlet(name)
-        .testRequest { recordedRequest -> recordedRequest.path == path && recordedRequest.method == "POST" &&  recordedRequest.body.buffer.peek().readUtf8() == requestBody }
-        .responseGetter { MockResponse().setResponseCode(200).setBody(body) }
-
     private val dispatchletFoldersWhenEmpty = createGetDispatchlet("folders", "/api/folders", staticFoldersWhenEmpty)
     // private val dispatchletFoldersWhenFooExists = createGetDispatchlet("folders", "/api/folders", staticFoldersWhenFooExists)
     private val dispatchletTestIfFolderFooExistsWhenFooExists = createGetDispatchlet("folderFoo", "/api/folders/test-folder-foo", staticFolderFooCreated)
@@ -239,4 +230,46 @@ class GrafanaClientTest {
     private val dispatchletFolderAddFoo = createPostDispatchlet("folderAddFoo", "/api/folders", staticFolderFooRequest, staticFolderFooCreated)
     private val dispatchletFolderAddBar = createPostDispatchlet("folderAddBar", "/api/folders", staticFolderBarRequest, staticFolderBarCreated)
     private val dispatchletFolderAddShon = createPostDispatchlet("folderAddShon", "/api/folders", staticFolderShonRequest, staticFolderShonCreated)
+
+    //endregion folders
+
+    //region dashboards
+    @OptIn(ExperimentalSerializationApi::class)
+    @Test
+    fun `should create a new diagram`() {
+        val grafanaClient = createGrafanaClient()
+
+        testDispatcher.add(dispatchletDiagramCreate)
+
+        val dashboard = buildJsonObject {
+            put("id", null)
+            put("uid", null)
+            put("title", "Production Overview")
+            put("tags", buildJsonArray {
+                add("templated")
+            })
+            put("timezone", "browser")
+            put("schemaVersion", 16)
+            put("refresh", "25s")
+        }.toString()
+
+        grafanaClient.createOrUpdateDashboard(dashboard, "test-folder")
+
+        assert(mockServer.requestCount == 1) {
+            "It should have created only 1 request (not ${mockServer.requestCount})"
+        }
+        assert(testDispatcher.namesDispatched.size == 1) {
+            "There should be only one successful call (not ${testDispatcher.namesDispatched.size})"
+        }
+        assert(testDispatcher.namesDispatched[0] == "createDiagram") {
+            "The only call should be the diagram creation (not ${testDispatcher.namesDispatched[0]})"
+        }
+    }
+    private val staticDiagramProps = """"title":"Production Overview","tags":["templated"],"timezone":"browser","schemaVersion":16,"refresh":"25s""""
+    private val staticDiagramBase = """{"id":null,"uid":null,${staticDiagramProps}}"""
+    private val staticDiagramRequestCreation = """{"dashboard":${staticDiagramBase},"folderUid":"test-folder","message":"autogenerated","overwrite":true}"""
+    private val staticDiagramCreated = """{"id":73,"uid":"e883f11b-77c0-4ee3-9a70-3ba223d66e56","url":"/d/e883f11b-77c0-4ee3-9a70-3ba223d66e56/production-overview","status":"success","version":2,"slug":"production-overview"}"""
+
+    private val dispatchletDiagramCreate = createPostDispatchlet("createDiagram", "/api/dashboards/db", staticDiagramRequestCreation, staticDiagramCreated)
+    //endregion
 }
