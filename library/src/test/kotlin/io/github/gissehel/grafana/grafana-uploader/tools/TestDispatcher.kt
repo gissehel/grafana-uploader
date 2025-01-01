@@ -8,6 +8,7 @@ import okhttp3.mockwebserver.RecordedRequest
 class TestDispatcher : Dispatcher() {
     private var dispatchlets : MutableList<Dispatchlet> = mutableListOf()
     private var dispatchletsByName : MutableMap<String, Dispatchlet> = mutableMapOf()
+    val namesDispatched : MutableList<String> = mutableListOf()
 
     fun add(dispatchlet: Dispatchlet) {
         val index = dispatchlets.indexOfFirst { dispatchlet.name == it.name }
@@ -18,6 +19,7 @@ class TestDispatcher : Dispatcher() {
         }
         dispatchletsByName[dispatchlet.name] = dispatchlet
     }
+
     fun remove(name: String) {
         val index = dispatchlets.indexOfFirst { name == it.name }
         if (index > -1) {
@@ -27,9 +29,11 @@ class TestDispatcher : Dispatcher() {
             dispatchletsByName.remove(name)
         }
     }
+
     fun clear() {
         dispatchlets.clear()
         dispatchletsByName.clear()
+        namesDispatched.clear()
     }
 
     override fun dispatch(request: RecordedRequest): MockResponse {
@@ -37,6 +41,7 @@ class TestDispatcher : Dispatcher() {
             if (dispatchlet.test(request)) {
                 val response = dispatchlet.getResponse(request)
                 if (response != null) {
+                    namesDispatched.add(dispatchlet.name)
                     return response
                 }
             }

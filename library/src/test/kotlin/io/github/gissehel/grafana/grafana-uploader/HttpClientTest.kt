@@ -1,9 +1,6 @@
 package io.github.gissehel.grafana.uploader
 
-// import io.github.infeez.kotlinmockserver.dsl.http.okhttp.okHttpMockServer
-// import io.github.infeez.kotlinmockserver.extensions.change
-// import io.github.infeez.kotlinmockserver.server.ServerConfiguration
-// import mock
+import io.github.gissehel.grafana.uploader.error.CommunicationError
 import io.github.gissehel.grafana.uploader.tools.TestDispatcher
 import io.github.gissehel.grafana.uploader.tools.model.Dispatchlet
 import kotlinx.serialization.json.jsonArray
@@ -14,6 +11,8 @@ import okhttp3.mockwebserver.MockWebServer
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import kotlin.test.Test
+import kotlin.test.assertFails
+import kotlin.test.assertFailsWith
 
 
 class HttpClientTest {
@@ -23,7 +22,7 @@ class HttpClientTest {
         start()
     }
 
-    fun getRootUrl() : String = mockServer.url("").toString() // url like "http://localhost:9999/"
+    fun getRootUrl() : String = mockServer.url("").toString().dropLast(1) // url like "http://localhost:9999"
 
     @BeforeEach
     fun beforeEach() {
@@ -39,7 +38,7 @@ class HttpClientTest {
         val httpClient = HttpClient()
         testDispatcher.add(dispatchletFoldersWhenEmpty)
 
-        httpClient.getJson("${getRootUrl()}api/folders","grut") { jsonElement ->
+        httpClient.getJson("${getRootUrl()}/api/folders","grut") { jsonElement ->
             val jsonArray = jsonElement.jsonArray
             assert(! jsonArray.isEmpty()) {
                 "Array should not be empty"
@@ -62,7 +61,7 @@ class HttpClientTest {
         val httpClient = HttpClient()
         testDispatcher.add(dispatchletFoldersWhenEmpty)
 
-        httpClient.getJson("${getRootUrl()}api/folders","grut") { jsonElement ->
+        httpClient.getJson("${getRootUrl()}/api/folders","grut") { jsonElement ->
             val request = mockServer.takeRequest()
             val auth = request.headers.get("Authorization")
             assert(auth != null) {
@@ -70,6 +69,19 @@ class HttpClientTest {
             }
             assert(auth == "Bearer grut") {
                 "The token should be passed to the request's header authorization field"
+            }
+        }
+    }
+
+    @Test
+    fun `getJson should fail when called on an endpoint that is not grafana compatible`() {
+        val httpClient = HttpClient()
+
+        assertFailsWith<CommunicationError> {
+            httpClient.getJson("${getRootUrl()}/api/folders", "grut") { jsonElement ->
+                assert(false) {
+                    "Should not arrive here"
+                }
             }
         }
     }
