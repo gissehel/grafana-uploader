@@ -1,4 +1,4 @@
-package io.github.gissehel.grafana.uploader.model
+package io.github.gissehel.grafana.`grafana-uploader`.model
 
 import kotlinx.serialization.Serializable
 

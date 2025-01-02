@@ -2,10 +2,10 @@ package io.github.gissehel.grafana.`grafana-uploader`
 
 import io.github.gissehel.grafana.`grafana-uploader`.tools.asObject
 import io.github.gissehel.grafana.`grafana-uploader`.tools.asString
-import io.github.gissehel.grafana.uploader.GrafanaClient
-import io.github.gissehel.grafana.uploader.error.CommunicationError
-import io.github.gissehel.grafana.uploader.tools.TestDispatcher
-import io.github.gissehel.grafana.uploader.tools.model.Dispatchlet
+import io.github.gissehel.grafana.`grafana-uploader`.error.CommunicationError
+import io.github.gissehel.grafana.`grafana-uploader`.model.Credential
+import io.github.gissehel.grafana.`grafana-uploader`.tools.TestDispatcher
+import io.github.gissehel.grafana.`grafana-uploader`.tools.model.Dispatchlet
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.*
 import okhttp3.mockwebserver.MockResponse
@@ -21,8 +21,8 @@ class GrafanaClientTest {
         start()
     }
     fun getRootUrl() : String = mockServer.url("").toString().dropLast(1) // url like "http://localhost:9999"
-    fun createGrafanaClient() = GrafanaClient("grut", getRootUrl())
-    fun createGrafanaClientAndDebug() = GrafanaClient("grut", getRootUrl()) {
+    fun createGrafanaClient() = GrafanaClient(getRootUrl(), Credential.usingToken("grut"))
+    fun createGrafanaClientAndDebug() = GrafanaClient(getRootUrl(), Credential.usingToken("grut")) {
         println(it)
     }
 
@@ -182,7 +182,7 @@ class GrafanaClientTest {
             "Result should have a uid with value this-is-a-long-name-with-length-value-40"
         }
         assert(testDispatcher.namesDispatched.size == 1) {
-            "There should be only one successful call"
+            "There should be only one successful call (not ${testDispatcher.namesDispatched.size})"
         }
         assert(testDispatcher.namesDispatched[0] == "folderAddShon") {
             "The only call should be the creation of folder shon (not ${testDispatcher.namesDispatched[0]})"

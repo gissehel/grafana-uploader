@@ -1,36 +1,37 @@
-package io.github.gissehel.grafana.uploader
+package io.github.gissehel.grafana.`grafana-uploader`
 
-import io.github.gissehel.grafana.uploader.error.CommunicationError
-import io.github.gissehel.grafana.uploader.model.Folder
-import io.github.gissehel.grafana.uploader.utils.DebugLoggable
-import io.github.gissehel.grafana.uploader.utils.getUidFromVuid
+import io.github.gissehel.grafana.`grafana-uploader`.error.CommunicationError
+import io.github.gissehel.grafana.`grafana-uploader`.model.Credential
+import io.github.gissehel.grafana.`grafana-uploader`.model.Folder
+import io.github.gissehel.grafana.`grafana-uploader`.utils.DebugLoggable
+import io.github.gissehel.grafana.`grafana-uploader`.utils.getUidFromVuid
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 
 class GrafanaClient(
-    val token: String,
     val rootUrl: String,
+    val credential: Credential,
     val onDebug : ((String) -> Unit)? = null
 ) : DebugLoggable(onDebug) {
     private var _http_client : HttpClient? = null
     private val httpClient : HttpClient get() {
         if (_http_client == null) {
-            HttpClient(onDebug).also { _http_client = it }
+            HttpClient(rootUrl, credential, onDebug).also { _http_client = it }
         }
         return _http_client!!
     }
 
-    private val getFoldersUrl: String get() = "${rootUrl}/api/folders"
-    private fun getFolderUrl(uid: String): String = "${rootUrl}/api/folders/${uid}"
-    private val getDashboardsUrl: String get() = "${rootUrl}/api/dashboards/db"
+    private val getFoldersUrl: String get() = "/api/folders"
+    private fun getFolderUrl(uid: String): String = "/api/folders/${uid}"
+    private val getDashboardsUrl: String get() = "/api/dashboards/db"
 
     fun createFolderIfNotExists(vuid: String, title: String, parentVuid: String) {
         var exists = false
         val uid = vuid.getUidFromVuid()
         val parentUid = parentVuid.getUidFromVuid()
         try {
-            httpClient.getJson(getFolderUrl(uid), token) { jsonElement ->
+            httpClient.getJson(getFolderUrl(uid)) { jsonElement ->
                 debugLog("Json: $jsonElement")
                 exists = true
             }
@@ -39,7 +40,7 @@ class GrafanaClient(
         }
         if (!exists) {
             val folder = Folder(uid = uid, title = title, parentUid = parentUid)
-            httpClient.postJson(getFoldersUrl, token, folder) { jsonElement ->
+            httpClient.postJson(getFoldersUrl, folder) { jsonElement ->
                 debugLog("Created folder [${uid}] ($vuid)")
                 debugLog("Json: ${jsonElement}")
             }
@@ -54,7 +55,7 @@ class GrafanaClient(
             put("overwrite", true)
         }
         try {
-            httpClient.postJson(getDashboardsUrl, token, dashboardRequest) { jsonElement ->
+            httpClient.postJson(getDashboardsUrl, dashboardRequest) { jsonElement ->
                 debugLog("Send diagram response: $jsonElement")
             }
         } catch (e: CommunicationError) {

@@ -1,14 +1,10 @@
-package io.github.gissehel.grafana.uploader.utils
+package io.github.gissehel.grafana.`grafana-uploader`.utils
 
 import okhttp3.Request
 
-fun Request.Builder.asJsonWithToken(token: String) : Request.Builder {
+fun Request.Builder.asJson() : Request.Builder =
     this.addHeader("Accept", "application/json")
         .addHeader("Content-Type", "application/json")
-        .addHeader("Authorization", "Bearer ${token}")
-
-    return this
-}
 
 fun String.getUidFromVuid(): String {
     if (this.length > 40) {

@@ -1,5 +1,7 @@
 import com.vanniktech.maven.publish.SonatypeHost
-import java.util.Properties
+import java.io.BufferedWriter
+import java.io.OutputStreamWriter
+import java.util.*
 
 plugins {
     kotlin("jvm") version "2.1.0"
@@ -67,6 +69,7 @@ mavenPublishing {
     }
 }
 
+//region Verisoning
 class Version(
     val major: Int,
     val minor: Int,
@@ -84,7 +87,20 @@ fun readProperties(filename: String): Properties {
 }
 
 fun writeProperties(properties: Properties, filename: String) {
-    file(filename).outputStream().use { properties.store(it, null) }
+    // For some reason, the following line output a Date in comment, and it's not best when using git
+    // file(filename).outputStream().use { properties.store(it, null) }
+
+    with(BufferedWriter(OutputStreamWriter(file(filename).outputStream(), Charsets.UTF_8))) {
+        synchronized(this) {
+            for(key in properties.keys().toList().map{ it.toString() }.sorted()) {
+                write("${key}=${properties[key]}")
+                // Not newLine() because there no reason a property file ends up with CRLF under windows, while
+                // everyone use LF even on Windows for code
+                write("\n")
+            }
+        }
+        flush()
+    }
 }
 
 fun deleteProperties(filename: String) {
@@ -220,3 +236,4 @@ listOf(
         }
     }
 }
+//endregion Verisoning

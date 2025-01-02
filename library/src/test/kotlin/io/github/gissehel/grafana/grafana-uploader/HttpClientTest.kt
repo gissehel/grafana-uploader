@@ -1,8 +1,10 @@
-package io.github.gissehel.grafana.uploader
+package io.github.gissehel.grafana.`grafana-uploader`
 
-import io.github.gissehel.grafana.uploader.error.CommunicationError
-import io.github.gissehel.grafana.uploader.tools.TestDispatcher
-import io.github.gissehel.grafana.uploader.tools.model.Dispatchlet
+import io.github.gissehel.grafana.`grafana-uploader`.error.CommunicationError
+import io.github.gissehel.grafana.`grafana-uploader`.model.Credential
+import io.github.gissehel.grafana.`grafana-uploader`.model.credential.IUnderstandThatUsingPasswordIsDiscouragedAndIShouldUseServiceAccountInsteadIfPossible
+import io.github.gissehel.grafana.`grafana-uploader`.tools.TestDispatcher
+import io.github.gissehel.grafana.`grafana-uploader`.tools.model.Dispatchlet
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
@@ -14,6 +16,7 @@ import kotlin.test.Test
 import kotlin.test.assertFails
 import kotlin.test.assertFailsWith
 
+@OptIn(IUnderstandThatUsingPasswordIsDiscouragedAndIShouldUseServiceAccountInsteadIfPossible::class)
 
 class HttpClientTest {
     val testDispatcher = TestDispatcher()
@@ -23,6 +26,10 @@ class HttpClientTest {
     }
 
     fun getRootUrl() : String = mockServer.url("").toString().dropLast(1) // url like "http://localhost:9999"
+    fun getHttpClient() = HttpClient(getRootUrl(), Credential.usingToken("grut"))
+    fun getHttpClient(username: String, password: String) = HttpClient(getRootUrl(), Credential.usingGrafanaUsernamePassword(username, password)) {
+        println(it)
+    }
 
     @BeforeEach
     fun beforeEach() {
@@ -35,10 +42,10 @@ class HttpClientTest {
 
     @Test
     fun `basic call should work as expected`() {
-        val httpClient = HttpClient()
+        val httpClient = getHttpClient()
         testDispatcher.add(dispatchletFoldersWhenEmpty)
 
-        httpClient.getJson("${getRootUrl()}/api/folders","grut") { jsonElement ->
+        httpClient.getJson("/api/folders") { jsonElement ->
             val jsonArray = jsonElement.jsonArray
             assert(! jsonArray.isEmpty()) {
                 "Array should not be empty"
@@ -58,10 +65,10 @@ class HttpClientTest {
 
     @Test
     fun `API call should provide the right token`() {
-        val httpClient = HttpClient()
+        val httpClient = getHttpClient()
         testDispatcher.add(dispatchletFoldersWhenEmpty)
 
-        httpClient.getJson("${getRootUrl()}/api/folders","grut") { jsonElement ->
+        httpClient.getJson("/api/folders") { jsonElement ->
             val request = mockServer.takeRequest()
             val auth = request.headers.get("Authorization")
             assert(auth != null) {
@@ -75,16 +82,69 @@ class HttpClientTest {
 
     @Test
     fun `getJson should fail when called on an endpoint that is not grafana compatible`() {
-        val httpClient = HttpClient()
+        val httpClient = getHttpClient()
 
         assertFailsWith<CommunicationError> {
-            httpClient.getJson("${getRootUrl()}/api/folders", "grut") { jsonElement ->
+            httpClient.getJson("/api/folders") { jsonElement ->
                 assert(false) {
                     "Should not arrive here"
                 }
             }
         }
     }
+
+    @Test
+    fun `API call should be callable with username and password`() {
+        val httpClient = getHttpClient("barnabo", "Barnabo67")
+        testDispatcher.add(dispatchletLogin)
+        testDispatcher.add(dispatchletFoldersWhenEmpty)
+
+        httpClient.getJson("/api/folders") { jsonElement ->
+            assert(mockServer.requestCount == 2) {
+                "It should have created 2 requests (not ${mockServer.requestCount})"
+            }
+            mockServer.takeRequest().let { request ->
+                val auth = request.headers.get("Authorization")
+                assert(auth == null) {
+                    "There should be no authorization in the first request's headers"
+                }
+                val cookie = request.headers.get("Cookie")
+                assert(cookie == null) {
+                    "There should be no cookie in the request's headers"
+                }
+            }
+            mockServer.takeRequest().let { request ->
+                val auth = request.headers.get("Authorization")
+                assert(auth == null) {
+                    "There should be no authorization in the second request's headers"
+                }
+                val cookie = request.headers.get("Cookie")
+                assert(cookie == "grafana_session=aafa91a231912599e076c91f8cf7281d") {
+                    "There should be a cookie in the request's headers (not ${cookie})"
+                }
+            }
+            assert(testDispatcher.namesDispatched.size == 2) {
+                "There should be 2 successful calls (not ${testDispatcher.namesDispatched.size})"
+            }
+            assert(testDispatcher.namesDispatched[0] == "login") {
+                "The first call should be a login request (not ${testDispatcher.namesDispatched[0]})"
+            }
+            assert(testDispatcher.namesDispatched[1] == "folders") {
+                "The second call should be the folders list (not ${testDispatcher.namesDispatched[0]})"
+            }
+        }
+    }
+
+    private val dispatchletLogin = Dispatchlet("login")
+        .testRequest { recordedRequest ->
+            recordedRequest.path == "/login" && recordedRequest.method == "POST" && recordedRequest.body.buffer.peek().readUtf8() == """{"user":"barnabo","password":"Barnabo67"}"""
+        }
+        .responseGetter {
+            MockResponse()
+                .setResponseCode(200)
+                .setHeader("set-cookie", "grafana_session=aafa91a231912599e076c91f8cf7281d; Path=/; Max-Age=2592000; HttpOnly; SameSite=Lax")
+                .setBody("""{"message":"Logged in","redirectUrl":"/"}""")
+        }
 
     private val dispatchletFoldersWhenEmpty = Dispatchlet("folders")
         .testRequest { recordedRequest ->
