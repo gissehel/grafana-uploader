@@ -1,4 +1,4 @@
-package io.github.gissehel.grafana.`grafana-uploader`.error
+package io.github.gissehel.grafana.grafanauploader.error
 
 class NoResponseError: Exception() {
 }

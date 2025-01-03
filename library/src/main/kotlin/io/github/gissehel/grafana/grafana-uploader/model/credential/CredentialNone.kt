@@ -1,5 +1,5 @@
-package io.github.gissehel.grafana.`grafana-uploader`.model.credential
+package io.github.gissehel.grafana.grafanauploader.model.credential
 
-import io.github.gissehel.grafana.`grafana-uploader`.model.Credential
+import io.github.gissehel.grafana.grafanauploader.model.Credential
 
 class CredentialNone: Credential() {}

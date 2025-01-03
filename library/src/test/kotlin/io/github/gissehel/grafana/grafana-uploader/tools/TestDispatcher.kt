@@ -1,6 +1,6 @@
-package io.github.gissehel.grafana.`grafana-uploader`.tools
+package io.github.gissehel.grafana.grafanauploader.tools
 
-import io.github.gissehel.grafana.`grafana-uploader`.tools.model.Dispatchlet
+import io.github.gissehel.grafana.grafanauploader.tools.model.Dispatchlet
 import okhttp3.mockwebserver.Dispatcher
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.RecordedRequest

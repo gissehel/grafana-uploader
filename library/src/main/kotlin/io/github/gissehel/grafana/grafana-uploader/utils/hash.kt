@@ -1,4 +1,4 @@
-package io.github.gissehel.grafana.`grafana-uploader`.utils
+package io.github.gissehel.grafana.grafanauploader.utils
 
 import java.security.MessageDigest
 

@@ -1,4 +1,4 @@
-package io.github.gissehel.grafana.`grafana-uploader`.tools
+package io.github.gissehel.grafana.grafanauploader.tools
 
 import kotlinx.serialization.json.*
 

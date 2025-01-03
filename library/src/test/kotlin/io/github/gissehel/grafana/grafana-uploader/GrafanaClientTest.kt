@@ -1,11 +1,11 @@
-package io.github.gissehel.grafana.`grafana-uploader`
+package io.github.gissehel.grafana.grafanauploader
 
-import io.github.gissehel.grafana.`grafana-uploader`.tools.asObject
-import io.github.gissehel.grafana.`grafana-uploader`.tools.asString
-import io.github.gissehel.grafana.`grafana-uploader`.error.CommunicationError
-import io.github.gissehel.grafana.`grafana-uploader`.model.Credential
-import io.github.gissehel.grafana.`grafana-uploader`.tools.TestDispatcher
-import io.github.gissehel.grafana.`grafana-uploader`.tools.model.Dispatchlet
+import io.github.gissehel.grafana.grafanauploader.tools.asObject
+import io.github.gissehel.grafana.grafanauploader.tools.asString
+import io.github.gissehel.grafana.grafanauploader.error.CommunicationError
+import io.github.gissehel.grafana.grafanauploader.model.Credential
+import io.github.gissehel.grafana.grafanauploader.tools.TestDispatcher
+import io.github.gissehel.grafana.grafanauploader.tools.model.Dispatchlet
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.*
 import okhttp3.mockwebserver.MockResponse

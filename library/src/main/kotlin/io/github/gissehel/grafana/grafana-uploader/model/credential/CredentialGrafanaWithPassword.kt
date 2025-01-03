@@ -1,8 +1,8 @@
-package io.github.gissehel.grafana.`grafana-uploader`.model.credential
+package io.github.gissehel.grafana.grafanauploader.model.credential
 
-import io.github.gissehel.grafana.`grafana-uploader`.model.Credential
-import io.github.gissehel.grafana.`grafana-uploader`.HttpClient
-import io.github.gissehel.grafana.`grafana-uploader`.error.NoSessionError
+import io.github.gissehel.grafana.grafanauploader.model.Credential
+import io.github.gissehel.grafana.grafanauploader.HttpClient
+import io.github.gissehel.grafana.grafanauploader.error.NoSessionError
 import kotlinx.serialization.json.JsonPrimitive
 import okhttp3.Request
 import kotlinx.serialization.json.buildJsonObject

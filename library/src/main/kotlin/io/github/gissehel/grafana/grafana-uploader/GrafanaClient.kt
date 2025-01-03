@@ -1,10 +1,10 @@
-package io.github.gissehel.grafana.`grafana-uploader`
+package io.github.gissehel.grafana.grafanauploader
 
-import io.github.gissehel.grafana.`grafana-uploader`.error.CommunicationError
-import io.github.gissehel.grafana.`grafana-uploader`.model.Credential
-import io.github.gissehel.grafana.`grafana-uploader`.model.Folder
-import io.github.gissehel.grafana.`grafana-uploader`.utils.DebugLoggable
-import io.github.gissehel.grafana.`grafana-uploader`.utils.getUidFromVuid
+import io.github.gissehel.grafana.grafanauploader.error.CommunicationError
+import io.github.gissehel.grafana.grafanauploader.model.Credential
+import io.github.gissehel.grafana.grafanauploader.model.Folder
+import io.github.gissehel.grafana.grafanauploader.utils.DebugLoggable
+import io.github.gissehel.grafana.grafanauploader.utils.getUidFromVuid
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put

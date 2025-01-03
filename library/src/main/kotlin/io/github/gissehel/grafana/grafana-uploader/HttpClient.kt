@@ -1,9 +1,9 @@
-package io.github.gissehel.grafana.`grafana-uploader`
-import io.github.gissehel.grafana.`grafana-uploader`.error.CommunicationError
-import io.github.gissehel.grafana.`grafana-uploader`.error.NoResponseError
-import io.github.gissehel.grafana.`grafana-uploader`.model.Credential
-import io.github.gissehel.grafana.`grafana-uploader`.model.useCredential
-import io.github.gissehel.grafana.`grafana-uploader`.utils.*
+package io.github.gissehel.grafana.grafanauploader
+import io.github.gissehel.grafana.grafanauploader.error.CommunicationError
+import io.github.gissehel.grafana.grafanauploader.error.NoResponseError
+import io.github.gissehel.grafana.grafanauploader.model.Credential
+import io.github.gissehel.grafana.grafanauploader.model.useCredential
+import io.github.gissehel.grafana.grafanauploader.utils.*
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement

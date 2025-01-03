@@ -32,8 +32,8 @@ implementation 'io.github.gissehel.grafana:grafana-uploader:$grafana_uploader_ve
 Note: API may change from one version to another without warning before 1.0.0
 
 ```kotlin
-import io.github.gissehel.grafana.`grafana-uploader`.GrafanaClient
-import io.github.gissehel.grafana.`grafana-uploader`.model.Credential
+import io.github.gissehel.grafana.grafanauploader.GrafanaClient
+import io.github.gissehel.grafana.grafanauploader.model.Credential
 
 // ...
 
@@ -73,9 +73,9 @@ If for some reason, you want to use username/password instead of Service Account
 * Opt-in for `IUnderstandThatUsingPasswordIsDiscouragedAndIShouldUseServiceAccountInsteadIfPossible`
 
 ```kotlin
-import io.github.gissehel.grafana.`grafana-uploader`.GrafanaClient
-import io.github.gissehel.grafana.`grafana-uploader`.model.Credential
-import io.github.gissehel.grafana.`grafana-uploader`.model.credential.IUnderstandThatUsingPasswordIsDiscouragedAndIShouldUseServiceAccountInsteadIfPossible
+import io.github.gissehel.grafana.grafanauploader.GrafanaClient
+import io.github.gissehel.grafana.grafanauploader.model.Credential
+import io.github.gissehel.grafana.grafanauploader.model.credential.IUnderstandThatUsingPasswordIsDiscouragedAndIShouldUseServiceAccountInsteadIfPossible
 
 // ...
 

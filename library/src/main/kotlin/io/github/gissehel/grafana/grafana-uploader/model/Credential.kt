@@ -1,10 +1,10 @@
-package io.github.gissehel.grafana.`grafana-uploader`.model
+package io.github.gissehel.grafana.grafanauploader.model
 
-import io.github.gissehel.grafana.`grafana-uploader`.HttpClient
-import io.github.gissehel.grafana.`grafana-uploader`.model.credential.CredentialGrafanaWithPassword
-import io.github.gissehel.grafana.`grafana-uploader`.model.credential.CredentialNone
-import io.github.gissehel.grafana.`grafana-uploader`.model.credential.CredentialWithToken
-import io.github.gissehel.grafana.`grafana-uploader`.model.credential.IUnderstandThatUsingPasswordIsDiscouragedAndIShouldUseServiceAccountInsteadIfPossible
+import io.github.gissehel.grafana.grafanauploader.HttpClient
+import io.github.gissehel.grafana.grafanauploader.model.credential.CredentialGrafanaWithPassword
+import io.github.gissehel.grafana.grafanauploader.model.credential.CredentialNone
+import io.github.gissehel.grafana.grafanauploader.model.credential.CredentialWithToken
+import io.github.gissehel.grafana.grafanauploader.model.credential.IUnderstandThatUsingPasswordIsDiscouragedAndIShouldUseServiceAccountInsteadIfPossible
 import okhttp3.Request
 
 abstract class Credential {

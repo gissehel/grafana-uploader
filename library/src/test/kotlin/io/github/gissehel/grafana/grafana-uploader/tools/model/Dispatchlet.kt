@@ -1,4 +1,4 @@
-package io.github.gissehel.grafana.`grafana-uploader`.tools.model
+package io.github.gissehel.grafana.grafanauploader.tools.model
 
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.RecordedRequest
