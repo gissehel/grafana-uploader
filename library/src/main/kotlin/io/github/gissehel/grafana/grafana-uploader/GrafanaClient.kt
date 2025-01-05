@@ -5,27 +5,46 @@ import io.github.gissehel.grafana.grafanauploader.model.Credential
 import io.github.gissehel.grafana.grafanauploader.model.Folder
 import io.github.gissehel.grafana.grafanauploader.utils.DebugLoggable
 import io.github.gissehel.grafana.grafanauploader.utils.getUidFromVuid
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.buildJsonObject
-import kotlinx.serialization.json.put
+import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.json.*
 
+/**
+ * GrafanaClient is the main class to create folders and upload dashboard to a grafana server.
+ *
+ * @property rootUrl The main root url of the server.
+ * @property credential The credential to use to connect to the server. Mainly a token, but can be login/password (need Opt-In)
+ * @property onDebug A function that will get some debug informations. For debug purpose only. If not provided, does nothing. May be removed in the future.
+ */
 class GrafanaClient(
     val rootUrl: String,
     val credential: Credential,
     val onDebug : ((String) -> Unit)? = null
 ) : DebugLoggable(onDebug) {
-    private var _http_client : HttpClient? = null
-    private val httpClient : HttpClient get() {
-        if (_http_client == null) {
-            HttpClient(rootUrl, credential, onDebug).also { _http_client = it }
+    private var _http_client: HttpClient? = null
+    private val httpClient: HttpClient
+        get() {
+            if (_http_client == null) {
+                HttpClient(rootUrl, credential, onDebug).also { _http_client = it }
+            }
+            return _http_client!!
         }
-        return _http_client!!
-    }
 
     private val getFoldersUrl: String get() = "/api/folders"
     private fun getFolderUrl(uid: String): String = "/api/folders/${uid}"
     private val getDashboardsUrl: String get() = "/api/dashboards/db"
 
+    /**
+     * Create a folder with a vuid and a title, and put it in the folder that has a parentVuid.
+     *
+     * The vuid given will be set to the folder uid if size of vuid is less that 40, otherwise, it will use
+     * the 40 first characters of the sha256 hash of the vuid as uid. Any valid uid is a valid vuid.
+     *
+     * **Example**: In the folder's URL `https://grafana.example.com/dashboards/f/8ca7eff5632/`, `8ca7eff5632` is the folder uid, thus it's a valid folder vuid.
+     *
+     * @param vuid The vuid of the folder to create (if not already exists)
+     * @param title The title of the folder to create (if not already exists)
+     * @param parentVuid The vuid of the folder where to put the folder to create (if not already exists)
+     */
     fun createFolderIfNotExists(vuid: String, title: String, parentVuid: String) {
         var exists = false
         val uid = vuid.getUidFromVuid()
@@ -47,6 +66,25 @@ class GrafanaClient(
         }
     }
 
+    /**
+     * Create or update a dashboard.
+     *
+     * **Warning**:
+     *   If your dashboard contains a non null "id" field,
+     *   grafana will try to overwrite the local dashboard
+     *   with this "id".
+     *   If that's not what you want, be sure to set "id" to json value null.
+     *   If your dashboard contains a non null "uid" field,
+     *   grafana will try to overwrite the local dashboard
+     *   with this "uid".
+     *   If that's not what you want, be sure to set "uid" to json value null.
+     *   Also "uid" should be less that 40 characters.
+     *
+     * **Example**: In the folder's URL `https://grafana.example.com/d/fe8wesx8luyo0f/dashboard-test/`, `fe8wesx8luyo0f` is the dashboard uid, thus it's a valid folder vuid.
+     *
+     * @param dashboard The dashboard json string
+     * @param folderVuid The vuid of the folder where to upload the dashboard (or "" for root)
+     */
     fun createOrUpdateDashboard(dashboard: String, folderVuid: String) {
         val dashboardRequest = buildJsonObject {
             put("dashboard", Json.parseToJsonElement(dashboard))
@@ -61,5 +99,26 @@ class GrafanaClient(
         } catch (e: CommunicationError) {
             debugLog("Communication error: [${e.asCode}]")
         }
+    }
+
+    /**
+     * Create or update a dashboard, given a vuid.
+     *
+     * The vuid given will be set to dashboard uid if size of vuid is less that 40, otherwise, it will use
+     * the 40 first characters of the sha256 hash of the vuid as uid. Any valid uid is a valid vuid.
+     *
+     * **Example**: In the folder's URL `https://grafana.example.com/d/fe8wesx8luyo0f/dashboard-test/`, `fe8wesx8luyo0f` is the dashboard uid, thus it's a valid folder vuid.
+     *
+     * @param vuid The vuid of the dashboard to upload
+     * @param dashboard The dashboard json string
+     * @param folderVuid The vuid of the folder where to upload the dashboard (or "" for root)
+     */
+    @OptIn(ExperimentalSerializationApi::class)
+    fun createOrUpdateDashboard(vuid: String, dashboard: String, folderVuid: String) {
+        val jsonElement = Json.parseToJsonElement(dashboard)
+        createOrUpdateDashboard(JsonObject(jsonElement.jsonObject.toMutableMap().apply {
+            put("id", JsonPrimitive(null))
+            put("uid", JsonPrimitive(vuid.getUidFromVuid()))
+        }).toString(), folderVuid)
     }
 }
